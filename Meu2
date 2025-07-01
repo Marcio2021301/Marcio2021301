@@ -1,0 +1,197 @@
+-- Muscle Legends Ultimate Script (PC e Mobile)
+-- Feito para uso pessoal com GUI, AutoFarm, Auto Rebirth, Pet Gacha, Fly, GodMode, Teleport
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Principal
+local UI = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+UI.Name = "MuscleLegendsHack"
+
+-- Configurações
+local Settings = {
+    AutoFarm = false,
+    TrainStrength = true,
+    TrainDurability = true,
+    TrainAgility = true,
+    AutoRebirth = false,
+    AutoGacha = false,
+    AutoUltimate = false,
+    FlyMode = false,
+    GodMode = false,
+    AutoTeleport = false
+}
+
+-- Criar Aba
+local function createTab(name, position)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 300)
+    frame.Position = position
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.Parent = UI
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Text = name
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    title.Parent = frame
+
+    return frame
+end
+
+local function createToggle(parent, label, settingKey)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, 40 + (#parent:GetChildren()-1) * 35)
+    btn.Text = label
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Parent = parent
+
+    btn.MouseButton1Click:Connect(function()
+        Settings[settingKey] = not Settings[settingKey]
+        btn.Text = label .. ": " .. (Settings[settingKey] and "ON" or "OFF")
+    end)
+end
+
+-- Criar Abas
+local farmTab = createTab("AutoFarm", UDim2.new(0, 20, 0, 20))
+createToggle(farmTab, "AutoFarm", "AutoFarm")
+createToggle(farmTab, "Força", "TrainStrength")
+createToggle(farmTab, "Durabilidade", "TrainDurability")
+createToggle(farmTab, "Agilidade", "TrainAgility")
+
+local petsTab = createTab("Pets", UDim2.new(0, 240, 0, 20))
+createToggle(petsTab, "Auto Gacha", "AutoGacha")
+
+local rebirthTab = createTab("Rebirth", UDim2.new(0, 460, 0, 20))
+createToggle(rebirthTab, "Auto Rebirth", "AutoRebirth")
+createToggle(rebirthTab, "Auto Ultimate", "AutoUltimate")
+
+local extraTab = createTab("Proteção & Extra", UDim2.new(0, 680, 0, 20))
+createToggle(extraTab, "God Mode", "GodMode")
+createToggle(extraTab, "Fly Mode", "FlyMode")
+createToggle(extraTab, "Auto Teleport Ginásio", "AutoTeleport")
+
+-- Funções principais
+local function train(stat)
+    local remotes = ReplicatedStorage:FindFirstChild("Stat")
+    if remotes and remotes:FindFirstChild(stat) then
+        remotes[stat]:FireServer()
+    end
+end
+
+local function rebirth()
+    local rebirthRemote = ReplicatedStorage:FindFirstChild("Rebirth")
+    if rebirthRemote then
+        rebirthRemote:InvokeServer()
+    end
+end
+
+local function openCrystal()
+    local gachaRemote = ReplicatedStorage:FindFirstChild("BuyCrystal")
+    if gachaRemote then
+        gachaRemote:InvokeServer("Crystal")
+    end
+end
+
+local function buyUltimate()
+    local uRemote = ReplicatedStorage:FindFirstChild("BuyUltimate")
+    if uRemote then
+        uRemote:InvokeServer("Ultimate")
+    end
+end
+
+local function teleportToGym()
+    local teleRemote = ReplicatedStorage:FindFirstChild("Teleport")
+    if teleRemote then
+        teleRemote:InvokeServer("BestGym")
+    end
+end
+
+-- AutoFarm
+spawn(function()
+    while true do
+        if Settings.AutoFarm then
+            if Settings.TrainStrength then train("Strength") end
+            if Settings.TrainDurability then train("Durability") end
+            if Settings.TrainAgility then train("Agility") end
+        end
+        wait(0.2)
+    end
+end)
+
+-- Auto Rebirth e Ultimate
+spawn(function()
+    while true do
+        if Settings.AutoRebirth and LocalPlayer:FindFirstChild("leaderstats") then
+            local str = LocalPlayer.leaderstats:FindFirstChild("Strength")
+            if str and str.Value >= 10000 then
+                rebirth()
+            end
+        end
+        if Settings.AutoUltimate then
+            buyUltimate()
+        end
+        wait(2)
+    end
+end)
+
+-- Auto Gacha
+spawn(function()
+    while true do
+        if Settings.AutoGacha then
+            openCrystal()
+        end
+        wait(5)
+    end
+end)
+
+-- Fly
+local BodyGyro, BodyVelocity
+spawn(function()
+    while true do
+        if Settings.FlyMode and not BodyVelocity then
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local root = char:WaitForChild("HumanoidRootPart")
+            BodyGyro = Instance.new("BodyGyro", root)
+            BodyVelocity = Instance.new("BodyVelocity", root)
+            BodyGyro.P = 9e4; BodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9); BodyGyro.cframe = root.CFrame
+            BodyVelocity.Velocity = Vector3.new(0, 0, 0); BodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        elseif not Settings.FlyMode and BodyVelocity then
+            BodyVelocity:Destroy(); BodyGyro:Destroy()
+            BodyVelocity, BodyGyro = nil, nil
+        end
+        wait(0.1)
+    end
+end)
+
+-- God Mode
+spawn(function()
+    while true do
+        if Settings.GodMode then
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid then humanoid.Health = humanoid.MaxHealth end
+            end
+        end
+        wait(1)
+    end
+end)
+
+-- Teleport to Gym
+spawn(function()
+    while true do
+        if Settings.AutoTeleport then
+            teleportToGym()
+        end
+        wait(10)
+    end
+end)
+
+print("✅ Muscle Legends Script executado com sucesso!")
